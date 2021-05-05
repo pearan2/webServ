@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   echo_server.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: honlee <honlee@student.42seoul.kr>         +#+  +:+       +#+        */
+/*   By: honlee <honlee@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/04 11:01:07 by honlee            #+#    #+#             */
-/*   Updated: 2021/05/04 18:18:07 by honlee           ###   ########seoul.kr  */
+/*   Updated: 2021/05/05 16:59:37 by honlee           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,9 @@
 #include <string>
 #include <unistd.h>
 #include <sys/socket.h>
-
+#include <arpa/inet.h>
+#include <errno.h>
+#include <string.h>
 
 #define BUF_SIZE 1024
 void error_handling(char *message);
@@ -23,11 +25,11 @@ void error_handling(char *message);
 int     main(int ac, char **av)
 {
     //파일 디스크립터를 위한 변수
-    int server_socket;
-    int client_socket;
-    char message[BUF_SIZE];
-    int str_len;
-    int i;
+    int		server_socket;
+    int		client_socket;
+    char	message[BUF_SIZE];
+    int		str_len;
+    int		i;
 
     // struct sockaddr_in
     // {
@@ -47,14 +49,11 @@ int     main(int ac, char **av)
 	//Big_Endian 방식(네트워크 바이트 순서)
 	//상위 바이트의 값이 메모리상먼저 표시되는 방법
 
-	
-
-
-    struct sockaddr_in server_addr;
-    struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct sockaddr_in client_addr;
     socklen_t client_addr_size;
 
-    if (argc != 2)
+    if (ac != 2)
     {
         printf("plz, check your input\n");
         return (1);
@@ -68,16 +67,21 @@ int     main(int ac, char **av)
     //  RAW_SOCKET 을 생성하는 경우가 유용한 경우라고 하는데, 일단은 스킵하자.
     //  대체로 socket(PF_INET, SOCK_STREAM, ) 인 경우에는 세번째 인자가 TCP 타입이,
     //  socket(PF_INET, SOCK_DGRAM, )인 경우에는 세번쨰 인자로 UDP타입이 들어간다.
-    server_socket = socket(PF_INET, SOCK_STREAM, 0);
+    
+	
+	//server_socket = socket(PF_INET, SOCK_STREAM, 0);
+	server_socket = socket(PF_INET, SOCK_STREAM, 0);
 	if (server_socket == -1)
 		error_handling("socket() error");
 
 	//소켓 생성
-	memeset(&server_addr, 0, sizeof(server_addr));
+	memset(&server_addr, 0, sizeof(server_addr));
 	
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(atoi(argv[1]));
+	//server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    server_addr.sin_port = htons(atoi(av[1]));
+	//server_addr.sin_port = htons(3000);
 
 	//socket 에 ip와 port 번호를 할당
 	if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr) == -1))
@@ -92,7 +96,7 @@ int     main(int ac, char **av)
 	for (int i=0; i < 5; i++)
 	{
 		//클라이언트 접속 요청을 수락. 클라이언트와 연결된 새로운 소켓이 생성된다.
-		client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_size )
+		client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_size );
 		if (client_socket == -1)
 			error_handling("accept() error");
 		else
@@ -112,5 +116,6 @@ int     main(int ac, char **av)
 void error_handling(char *message)
 {
 	printf("%s\n", message);
+	printf("error %d : %s\n", errno,strerror(errno));
 	exit(1);
 }
